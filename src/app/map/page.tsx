@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Map3DProvider } from "@/components/map/Map3DProvider";
 import { api } from "@/lib/trpc/client";
+import { MapPosition } from "@/server/types/Map";
 
 /**
  * Lazy load Map3D component - 3D rendering is heavy and client-only.
@@ -34,6 +35,7 @@ const DEFAULT_CENTER = {
 
 export default function MapPage() {
   const { data: locations, isLoading, error } = api.locations.getAll.useQuery();
+  const EMPTY_LOCATIONS: MapPosition[] = [];
   console.log("Fetched locations:", locations);
 
   // Loading state - show spinner while fetching locations
@@ -82,7 +84,7 @@ export default function MapPage() {
           heading={45}
           range={3000}
           mode="HYBRID"
-          markers={locations ?? []}
+          markers={locations ?? EMPTY_LOCATIONS}
           className="h-full w-full"
         />
       </Map3DProvider>
