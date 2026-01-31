@@ -30,6 +30,8 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toolbar": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@t3-oss/env-nextjs": "^0.13.8",
     "@tanstack/react-query": "^5.90.12",
     "@trpc/client": "^11.7.2",
@@ -69,13 +71,16 @@
     "tailwind-merge": "^3.4.0",
     "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^4.3.5"
+    "three": "^0.182.0",
+    "zod": "^4.3.5",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.182.0",
     "autoprefixer": "^10.4.22",
     "drizzle-kit": "^0.31.8",
     "eslint": "^9",

@@ -3,6 +3,7 @@ import { cache } from 'react';
 import superjson from 'superjson';
 import { headers } from 'next/headers';
 import 'server-only';
+import { db } from '@/server/db';
 
 /**
  * CONTEXT
@@ -14,7 +15,8 @@ export const createTRPCContext = cache(async () => {
     const heads = await headers();
 
     return {
-        headers: heads
+        headers: heads,
+        db,
     };
 });
 
