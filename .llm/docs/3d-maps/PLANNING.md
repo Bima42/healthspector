@@ -2,7 +2,7 @@
 
 ## Situation Overview
 
-**Stack:** Next.js 15 + Tailwind V3 + tRPC + Drizzle (existing boilerplate)
+**Stack:** Next.js 16 + Tailwind V4 + tRPC
 
 **Challenge:** Google's 3D Maps (`Map3DElement` / `gmp-map-3d`) is relatively new (beta). The popular React wrapper (`@vis.gl/react-google-maps`) primarily supports the 2D `Map` component. We need to bridge this gap.
 
