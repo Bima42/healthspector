@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useApiIsLoaded } from "@vis.gl/react-google-maps";
-import { type Map3DProps } from "@/server/types/maps";
+import { type Map3DProps } from "@/server/types/Map";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_TILT = 67.5;
