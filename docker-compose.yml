@@ -2,56 +2,19 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/next/dev/Dockerfile
-    container_name: next_app
+      dockerfile: docker/dev/Dockerfile
+    container_name: next_landing_page
     ports:
       - "3000:3000"
     volumes:
-      - ./app:/home/next/app
+      - .:/home/next/app
       - next-node-modules:/home/next/app/node_modules
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - app-network
-
-  postgres:
-    image: postgres:18-alpine
-    container_name: postgres_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/18/data
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=app
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
-  stripe:
-    image: stripe/stripe-cli
-    command:
-      - "listen"
-      - "--api-key"
-      - "${STRIPE_SECRET_KEY}"
-      - "--forward-to"
-      - "${STRIPE_CLI_WEBHOOK_URL}"
-      - "--latest"
-    depends_on:
-      - app
-    networks:
-      - app-network
+      - NODE_ENV=development
 
 volumes:
-  postgres_data:
   next-node-modules:
 
 networks:

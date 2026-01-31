@@ -1,0 +1,10 @@
+{
+    "Hero": {
+      "title": "Modèle de Landing Page",
+      "subtitle": "Veuillez éditer ce contenu pour créer votre page d'accueil",
+      "description": "Ceci est un boilerplate Next.js 16 avec React 19, Tailwind CSS v4, TypeScript et next-intl pour l'internationalisation."
+    },
+    "LanguageSwitcher": {
+      "changeLanguage": "Langue"
+    }
+  }
