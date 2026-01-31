@@ -5,7 +5,6 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { HumanModel } from "./human-model";
 import { PainPin } from "./pain-pin";
-import { PinEditorPanel } from "./pin-editor-panel";
 import { api } from "@/lib/trpc/client";
 import type { PainPoint } from "@/server/db/schema";
 import { useSessionStore } from "@/lib/stores/session-store";
@@ -46,29 +45,25 @@ export function BodyViewer({ sessionId, initialPainPoints }: Props) {
   const selectedPinId = useSessionStore((s) => s.selectedPinId);
 
   return (
-    <div className="flex-1 flex">
-      <div className="flex-1">
-        <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={0.8} />
+    <div className="flex-1">
+      <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={0.8} />
 
           <Suspense fallback={null}>
             <HumanModel onClick={handleModelClick} />
           </Suspense>
 
-          {session?.painPoints?.map((point) => (
-            <PainPin
-              key={point.id}
-              point={point}
-              isSelected={point.id === selectedPinId}
-            />
-          ))}
+        {session?.painPoints?.map((point) => (
+          <PainPin
+            key={point.id}
+            point={point}
+            isSelected={point.id === selectedPinId}
+          />
+        ))}
 
-          <OrbitControls enablePan={false} minDistance={1.5} maxDistance={5} />
-        </Canvas>
-      </div>
-
-      <PinEditorPanel sessionId={sessionId} />
+        <OrbitControls enablePan={false} minDistance={1.5} maxDistance={5} />
+      </Canvas>
     </div>
   );
 }
