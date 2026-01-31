@@ -1,5 +1,4 @@
-import { BodyViewer } from "@/components/session/body-viewer";
-import { PinListSidebar } from "@/components/session/pin-list-sidebar";
+import { SessionView } from "@/components/session/session-view";
 import { api } from "@/lib/trpc/server";
 import { notFound } from "next/navigation";
 
@@ -17,17 +16,11 @@ export default async function SessionPage({
 
   return (
     <div className="h-screen">
-      <PinListSidebar sessionId={session.id}>
-        <div className="h-full flex flex-col">
-          <header className="border-b p-4 bg-background z-10">
-            <h1 className="text-xl font-semibold">{session.title}</h1>
-          </header>
-          <BodyViewer
-            sessionId={session.id}
-            initialPainPoints={session.painPoints ?? []}
-          />
-        </div>
-      </PinListSidebar>
+      <SessionView
+        sessionId={session.id}
+        sessionTitle={session.title}
+        initialPainPoints={session.painPoints ?? []}
+      />
     </div>
   );
 }

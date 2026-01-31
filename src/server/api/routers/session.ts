@@ -36,6 +36,8 @@ export const sessionRouter = createTRPCRouter({
           z: z.number(),
         }),
         label: z.string().default(""),
+        notes: z.string().optional(),
+        rating: z.number().int().min(0).max(10).default(5),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -47,6 +49,8 @@ export const sessionRouter = createTRPCRouter({
           posY: input.position.y,
           posZ: input.position.z,
           label: input.label,
+          notes: input.notes,
+          rating: input.rating,
         })
         .returning();
       return point;
@@ -58,6 +62,7 @@ export const sessionRouter = createTRPCRouter({
         id: z.string().uuid(),
         label: z.string().optional(),
         notes: z.string().optional(),
+        rating: z.number().int().min(0).max(10).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

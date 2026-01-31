@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, real, integer } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { sessions } from "./sessions";
 
@@ -16,6 +16,7 @@ export const painPoints = pgTable("pain_points", {
   // Contenu
   label: text("label").notNull().default(""),
   notes: text("notes"),
+  rating: integer("rating").notNull().default(5), // 0-10 scale
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

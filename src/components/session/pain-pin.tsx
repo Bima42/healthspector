@@ -1,17 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Html } from "@react-three/drei";
-import { useSessionStore } from "@/lib/stores/session-store";
 import type { PainPoint } from "@/server/db/schema";
 
 interface Props {
   point: PainPoint;
-  isSelected: boolean;
+  onEdit: (pinId: string) => void;
 }
 
-export function PainPin({ point, isSelected }: Props) {
-  const selectPin = useSessionStore((s) => s.selectPin);
+export function PainPin({ point, onEdit }: Props) {
   const [isHovered, setIsHovered] = useState(false);
 
   const position: [number, number, number] = [
@@ -20,7 +17,13 @@ export function PainPin({ point, isSelected }: Props) {
     point.posZ,
   ];
 
-  // const showLabel = isSelected || isHovered;
+  const getPinColor = (rating: number) => {
+    if (rating <= 3) return { base: "#22c55e", emissive: "#16a34a" }; // green
+    if (rating <= 6) return { base: "#eab308", emissive: "#ca8a04" }; // yellow
+    return { base: "#ef4444", emissive: "#dc2626" }; // red
+  };
+
+  const colors = getPinColor(point.rating);
 
   return (
     <group position={position}>
@@ -28,15 +31,15 @@ export function PainPin({ point, isSelected }: Props) {
       <mesh
         onClick={(event) => {
           event.stopPropagation();
-          selectPin(point.id);
+          onEdit(point.id);
         }}
         onPointerEnter={() => setIsHovered(true)}
         onPointerLeave={() => setIsHovered(false)}
       >
         <sphereGeometry args={[0.03, 16, 16]} />
         <meshStandardMaterial
-          color={isSelected ? "#ef4444" : "#f97316"}
-          emissive={isSelected ? "#dc2626" : "#ea580c"}
+          color={colors.base}
+          emissive={colors.emissive}
           emissiveIntensity={isHovered ? 0.8 : 0.5}
         />
       </mesh>
