@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Map3DProvider } from "@/components/map/Map3DProvider";
-import { type MapPosition } from "@/server/types/Map";
+import { api } from "@/lib/trpc/client";
 
 /**
  * Lazy load Map3D component - 3D rendering is heavy and client-only.
@@ -32,37 +32,47 @@ const DEFAULT_CENTER = {
   altitude: 500,
 };
 
-/**
- * Test markers - iconic San Francisco locations
- */
-const TEST_MARKERS: MapPosition[] = [
-  {
-    id: "golden-gate",
-    lat: 37.8199,
-    lng: -122.4783,
-    altitude: 0,
-    label: "Golden Gate Bridge",
-    type: "poi",
-  },
-  {
-    id: "downtown-sf",
-    lat: 37.7749,
-    lng: -122.4194,
-    altitude: 0,
-    label: "Downtown SF",
-    type: "poi",
-  },
-  {
-    id: "coit-tower",
-    lat: 37.8024,
-    lng: -122.4058,
-    altitude: 0,
-    label: "Coit Tower",
-    type: "poi",
-  },
-];
-
 export default function MapPage() {
+  const { data: locations, isLoading, error } = api.locations.getAll.useQuery();
+  console.log("Fetched locations:", locations);
+
+  // Loading state - show spinner while fetching locations
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-slate-600" />
+          <span className="text-sm font-medium">Loading locations...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state - show user-friendly error message
+  if (error) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
+        <div className="flex flex-col items-center gap-3 text-red-600">
+          <svg
+            className="h-12 w-12"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span className="text-sm font-medium">Failed to load locations</span>
+          <span className="text-xs text-slate-500">{error.message}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-full">
       <Map3DProvider>
@@ -72,7 +82,7 @@ export default function MapPage() {
           heading={45}
           range={3000}
           mode="HYBRID"
-          markers={TEST_MARKERS}
+          markers={locations ?? []}
           className="h-full w-full"
         />
       </Map3DProvider>

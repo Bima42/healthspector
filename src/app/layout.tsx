@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
+import { TRPCProvider } from "@/lib/trpc/client";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={inter.variable}>
       <body className="font-sans antialiased">
+        <TRPCProvider>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
+        </TRPCProvider>
       </body>
     </html>
   );
