@@ -1,43 +1,56 @@
 /**
- * Records audio from a MediaStream and returns the audio blob
+ * Records audio from a MediaStream and returns an object with:
+ * - promise: resolves with the audio blob when recording stops
+ * - stop: function to stop the recording
  */
-export function recordAudio(stream: MediaStream): Promise<Blob> {
-    const mediaRecorder = new MediaRecorder(stream);
-    const chunks: Blob[] = [];
-  
-    return new Promise((resolve, reject) => {
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-  
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        resolve(blob);
-      };
-  
-      mediaRecorder.onerror = (error) => {
-        reject(error);
-      };
-  
-      mediaRecorder.start();
-    });
+export function recordAudio(stream: MediaStream) {
+  const mimeTypes = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+  ];
+
+  let selectedMimeType = "audio/webm";
+  for (const mimeType of mimeTypes) {
+    if (MediaRecorder.isTypeSupported(mimeType)) {
+      selectedMimeType = mimeType;
+      console.log("[Audio] Using codec:", mimeType);
+      break;
+    }
   }
-  
-  /**
-   * Dummy transcription function for UI purposes
-   * In production, this should call your transcription API
-   */
-  export async function transcribeAudio(audioBlob: Blob): Promise<string> {
-    // Simulate transcription delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Return empty string for now (UI only)
-    return "";
-  }
-  
-  // Expose stop method on the recordAudio function
-  recordAudio.stop = function () {
-    // This will be set by the actual recording instance
+
+  const mediaRecorder = new MediaRecorder(stream, {
+    mimeType: selectedMimeType,
+    audioBitsPerSecond: 128000,
+  });
+
+  const chunks: Blob[] = [];
+
+  const promise = new Promise<Blob>((resolve, reject) => {
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: selectedMimeType });
+      console.log("[Audio] Recording finished:", {
+        size: blob.size,
+        type: blob.type,
+      });
+      resolve(blob);
+    };
+
+    mediaRecorder.onerror = (error) => {
+      reject(error);
+    };
+  });
+
+  mediaRecorder.start();
+
+  return {
+    promise,
+    stop: () => mediaRecorder.stop(),
   };
+}

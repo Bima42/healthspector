@@ -7,7 +7,6 @@ import { EditPinDialog } from "./edit-pin-dialog";
 import { MessageInput } from "./message-input";
 import { Textarea } from "../ui/textarea";
 import { ShareButton } from "./share-button";
-import { transcribeAudio } from "../../lib/audio-utils";
 import { api } from "../../lib/trpc/client";
 import { useSessionStore } from "../../providers/store-provider";
 import type { PainPoint } from "../../types/TPainPoint";
@@ -17,6 +16,18 @@ interface Props {
   sessionTitle: string | null;
   initialPainPoints: PainPoint[];
 }
+
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 export function SessionView({
   sessionId,
@@ -55,6 +66,8 @@ export function SessionView({
     },
   });
 
+  const transcribeMutation = api.speech.transcribe.useMutation();
+
   useEffect(() => {
     if (session) {
       setSession(session);
@@ -85,6 +98,25 @@ export function SessionView({
 
   const handleTestAddPin = (meshName: string) => {
     setTargetMesh(meshName);
+  };
+
+  const handleTranscribeAudio = async (blob: Blob): Promise<string> => {
+    try {
+      // Convert Blob to base64 data URL
+      const base64Data = await blobToBase64(blob);
+      
+      // Call the transcription mutation
+      const result = await transcribeMutation.mutateAsync({
+        audioData: base64Data,
+      });
+      
+      // Return the transcribed text
+      return result.text;
+    } catch (error) {
+      console.error("[SessionView] Transcription error:", error);
+      // Return empty string on error to avoid breaking the UI
+      return "";
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -134,7 +166,7 @@ export function SessionView({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 isGenerating={processMessageMutation.isPending}
-                transcribeAudio={transcribeAudio}
+                transcribeAudio={handleTranscribeAudio}
                 submitOnEnter={true}
               />
             </form>

@@ -6,6 +6,7 @@ export const env = createEnv({
         DATABASE_URL: z.string().min(1, 'Database URL is required'),
         NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
         OPENROUTER_API_KEY: z.string().min(1, 'OpenRouter API key is required'),
+        ELEVENLABS_API_KEY: z.string().min(1, 'ElevenLabs API key is required'),
     },
     client: {
         NEXT_PUBLIC_APP_URL: z.url(),
@@ -15,6 +16,7 @@ export const env = createEnv({
         DATABASE_URL: process.env.DATABASE_URL,
         NODE_ENV: process.env.NODE_ENV,
         OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+        ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
 
         // Client
         NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
