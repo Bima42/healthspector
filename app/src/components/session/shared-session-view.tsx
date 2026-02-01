@@ -79,13 +79,12 @@ export function SharedSessionView({
           {sessionTitle} <span className="text-xs">(Read-only)</span>
         </h1>
         
-        <div className="w-8" /> {/* Spacer for centering */}
+        <div className="w-8" />
       </header>
 
       <div className="flex-1 flex overflow-hidden">
         <PinListPanel
           onPinClick={handlePinClick}
-          readOnly
         />
 
         <div className="flex-1 relative">
