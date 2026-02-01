@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BodyViewer } from "./body-viewer";
 import { PinListSidebar } from "./pin-list-sidebar";
 import { EditPinDialog } from "./edit-pin-dialog";
-import { MessageInput } from "@/components/ui/message-input";
+import { MessageInput } from "@/components/session/message-input";
 import { transcribeAudio } from "@/lib/audio-utils";
 import type { PainPoint } from "@/server/db/schema";
 

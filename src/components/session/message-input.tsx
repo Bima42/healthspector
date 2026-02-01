@@ -2,12 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, Info, Loader2, Mic, Square } from "lucide-react";
+import { ArrowUp, Info, Mic, Square } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAudioRecording } from "@/hooks/use-audio-recording";
 import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea";
-import { AudioVisualizer } from "@/components/ui/audio-visualizer";
+import { AudioVisualizer } from "@/components/session/audio-visualizer";
+import { TranscribingShimmer } from "@/components/session/transcribing-shimmer";
 import { Button } from "@/components/ui/button";
 import { InterruptPrompt } from "@/components/ui/interrupt-prompt";
 
@@ -170,36 +171,6 @@ export function MessageInput({
 }
 MessageInput.displayName = "MessageInput";
 
-function TranscribingOverlay() {
-  return (
-    <motion.div
-      className="flex h-full w-full flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <div className="relative">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <motion.div
-          className="absolute inset-0 h-8 w-8 animate-pulse rounded-full bg-primary/20"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1.2, opacity: 1 }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-        />
-      </div>
-      <p className="mt-4 text-sm font-medium text-muted-foreground">
-        Transcribing audio...
-      </p>
-    </motion.div>
-  );
-}
-
 interface RecordingPromptProps {
   isVisible: boolean;
   onStopRecording: () => void;
@@ -269,7 +240,7 @@ function RecordingControls({
         className="absolute inset-[1px] z-50 overflow-hidden rounded-xl"
         style={{ height: textAreaHeight - 2 }}
       >
-        <TranscribingOverlay />
+        <TranscribingShimmer />
       </div>
     );
   }
