@@ -4,10 +4,10 @@ FROM node:20-slim AS base
 FROM base AS builder
 WORKDIR /app
 
-COPY package*.json ./
+COPY ./app/package*.json ./
 RUN npm ci
 
-COPY ./ ./
+COPY ./app ./
 
 ARG NEXT_PUBLIC_APP_URL
 

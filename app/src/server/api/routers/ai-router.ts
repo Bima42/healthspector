@@ -1,0 +1,74 @@
+import { z } from "zod";
+import { createTRPCRouter, publicProcedure } from "../trpc";
+import { buildSessionPrompt, SESSION_SYSTEM_MESSAGE } from "../../../lib/llm/session-prompt";
+import { llmInvoke } from "../../../lib/llm/llm";
+import { aiSessionUpdateSchema, type AISessionUpdate } from "../../../types/TAISessionUpdate";
+import { SessionService } from "../../services/session-service";
+import { PainPointService } from "../../services/pain-point-service";
+
+const predefinedPainPointSchema = z.object({
+  name: z.string(),
+  position: z.tuple([z.number(), z.number(), z.number()]),
+  label: z.string(),
+  category: z.string(),
+});
+
+export const aiRouter = createTRPCRouter({
+  processMessage: publicProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        userMessage: z.string().min(1),
+        predefinedPoints: z.array(predefinedPainPointSchema),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const session = await SessionService.getById(input.sessionId);
+
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      const historySlots = await SessionService.getHistory(input.sessionId);
+
+      const prompt = buildSessionPrompt(
+        input.predefinedPoints,
+        historySlots,
+        input.userMessage
+      );
+
+      console.log("[AI] Input:\n", prompt);
+
+      const aiResponse = await llmInvoke<AISessionUpdate>(
+        prompt,
+        aiSessionUpdateSchema,
+        SESSION_SYSTEM_MESSAGE
+      );
+
+      console.log("[AI] Output:", JSON.stringify(aiResponse, null, 2));
+
+      if (aiResponse.painPoints !== undefined) {
+        await PainPointService.deleteAll(input.sessionId);
+
+        if (aiResponse.painPoints.length > 0) {
+          const resolvedPoints = PainPointService.resolveMeshNames(
+            aiResponse.painPoints,
+            input.predefinedPoints,
+            input.sessionId
+          );
+
+          await PainPointService.bulkInsert(resolvedPoints);
+        }
+      }
+
+      const historySlot = await SessionService.createHistorySlot(
+        input.sessionId,
+        input.userMessage,
+        aiResponse.notes ?? undefined
+      );
+
+      const updatedSession = await SessionService.getById(input.sessionId);
+
+      return { session: updatedSession!, historySlot };
+    }),
+});
