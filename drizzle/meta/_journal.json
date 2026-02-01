@@ -15,6 +15,13 @@
       "when": 1769905841585,
       "tag": "0001_complete_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769916488455,
+      "tag": "0002_early_wasp",
+      "breakpoints": true
     }
   ]
 }

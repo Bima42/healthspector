@@ -22,7 +22,7 @@ export function SessionView({
   sessionTitle,
   initialPainPoints,
 }: Props) {
-  const { setSession, setLoading, selectedPinId, selectPin } = useSessionStore((state) => state);
+  const { setSession, setLoading, selectedPinId, selectPin, setHistory, addHistorySlot } = useSessionStore((state) => state);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -42,6 +42,14 @@ export function SessionView({
     }
   );
 
+  const { data: history } = api.session.getHistory.useQuery({ sessionId });
+
+  const createHistorySlotMutation = api.session.createHistorySlot.useMutation({
+    onSuccess: (newSlot) => {
+      addHistorySlot(newSlot);
+    },
+  });
+
   useEffect(() => {
     if (session) {
       setSession(session);
@@ -51,6 +59,12 @@ export function SessionView({
   useEffect(() => {
     setLoading(isLoading);
   }, [isLoading, setLoading]);
+
+  useEffect(() => {
+    if (history) {
+      setHistory(history);
+    }
+  }, [history, setHistory]);
 
   const handlePinClick = (pinId: string) => {
     selectPin(pinId);
@@ -68,9 +82,22 @@ export function SessionView({
     setTargetMesh(meshName);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!input.trim()) return;
+
+    createHistorySlotMutation.mutate({
+      sessionId,
+      userMessage: input,
+      notes: notes || undefined,
+    });
+
+    setInput("");
+  };
+
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b p-4 bg-background z-10">
         <h1 className="text-xl font-semibold">{sessionTitle}</h1>
       </header>
@@ -97,17 +124,11 @@ export function SessionView({
           />
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-20">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                console.log("Message submitted:", input);
-                setInput("");
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <MessageInput
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                isGenerating={false}
+                isGenerating={createHistorySlotMutation.isPending}
                 transcribeAudio={transcribeAudio}
                 submitOnEnter={true}
               />

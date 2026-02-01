@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { sessions, painPoints, painTypeEnum } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { sessions, painPoints, painTypeEnum, sessionHistory } from "@/server/db/schema";
+import { eq, asc } from "drizzle-orm";
 
 const painTypeSchema = z.enum(painTypeEnum.enumValues);
 
@@ -85,5 +85,45 @@ export const sessionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await ctx.db.delete(painPoints).where(eq(painPoints.id, input.id));
       return { success: true };
+    }),
+
+  createHistorySlot: publicProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        userMessage: z.string(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const currentPainPoints = await ctx.db.query.painPoints.findMany({
+        where: eq(painPoints.sessionId, input.sessionId),
+      });
+
+      const existingSlots = await ctx.db.query.sessionHistory.findMany({
+        where: eq(sessionHistory.sessionId, input.sessionId),
+      });
+
+      const [slot] = await ctx.db
+        .insert(sessionHistory)
+        .values({
+          sessionId: input.sessionId,
+          painPoints: currentPainPoints,
+          notes: input.notes,
+          userMessage: input.userMessage,
+          index: existingSlots.length,
+        })
+        .returning();
+
+      return slot;
+    }),
+
+  getHistory: publicProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.sessionHistory.findMany({
+        where: eq(sessionHistory.sessionId, input.sessionId),
+        orderBy: asc(sessionHistory.index),
+      });
     }),
 });

@@ -1,47 +1,37 @@
 import { createStore } from 'zustand/vanilla';
 import type { SessionWithPainPoints } from '@/types/TSession';
 import type { PainPoint, PainPointUpdate } from '@/types/TPainPoint';
+import type { SessionHistorySlot } from '@/types/TSessionHistory';
 
-/**
- * Session Store State Interface
- */
 export interface SessionStoreState {
-  // Session data
   session: SessionWithPainPoints | null;
   isLoading: boolean;
-  
-  // UI state
   selectedPinId: string | null;
   
-  // Actions - Session
+  historySlots: SessionHistorySlot[];
+  
   setSession: (session: SessionWithPainPoints) => void;
   setLoading: (isLoading: boolean) => void;
   
-  // Actions - Pain Points
   addPainPoint: (point: PainPoint) => void;
   updatePainPoint: (id: string, updates: PainPointUpdate) => void;
   removePainPoint: (id: string) => void;
   
-  // Actions - UI
   selectPin: (id: string | null) => void;
   clearSelection: () => void;
   
-  // Actions - Reset
+  setHistory: (slots: SessionHistorySlot[]) => void;
+  addHistorySlot: (slot: SessionHistorySlot) => void;
+  
   reset: () => void;
 }
 
-/**
- * Session Store
- * 
- * Centralized state management for pain mapping sessions
- */
 export const sessionStore = createStore<SessionStoreState>()((set) => ({
-  // Initial state
   session: null,
   isLoading: false,
   selectedPinId: null,
+  historySlots: [],
 
-  // Session actions
   setSession: (session: SessionWithPainPoints) => {
     set({ 
       session,
@@ -53,7 +43,6 @@ export const sessionStore = createStore<SessionStoreState>()((set) => ({
     set({ isLoading });
   },
 
-  // Pain points actions
   addPainPoint: (point: PainPoint) => {
     set((state) => {
       if (!state.session) return {};
@@ -93,13 +82,11 @@ export const sessionStore = createStore<SessionStoreState>()((set) => ({
           ...state.session,
           painPoints: state.session.painPoints.filter((point) => point.id !== id),
         },
-        // Clear selection if the removed point was selected
         selectedPinId: state.selectedPinId === id ? null : state.selectedPinId,
       };
     });
   },
 
-  // UI actions
   selectPin: (id: string | null) => {
     set({ selectedPinId: id });
   },
@@ -108,12 +95,22 @@ export const sessionStore = createStore<SessionStoreState>()((set) => ({
     set({ selectedPinId: null });
   },
 
-  // Reset
+  setHistory: (slots: SessionHistorySlot[]) => {
+    set({ historySlots: slots });
+  },
+
+  addHistorySlot: (slot: SessionHistorySlot) => {
+    set((state) => ({
+      historySlots: [...state.historySlots, slot],
+    }));
+  },
+
   reset: () => {
     set({
       session: null,
       isLoading: false,
       selectedPinId: null,
+      historySlots: [],
     });
   },
 }));

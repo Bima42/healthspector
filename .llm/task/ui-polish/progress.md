@@ -91,3 +91,27 @@
     -   Mutations optimistes : Update store immédiatement → Invalidate cache tRPC
     -   Usage du store : `const { prop1, prop2 } = useSessionStore((state) => state)`
     -   Suppression de l'ancien store (`src/lib/stores/session-store.ts`)
+
+### ✅ **Phase 5 : Système d'historique par snapshots**
+
+-   **Schema de base de données :**
+    -   **`src/server/db/schema/session-history.ts`** : Table `session_history` avec snapshots JSON des pain points
+    -   **Champs :** `painPoints` (jsonb), `notes` (text), `userMessage` (text), `index` (integer pour ordre chronologique)
+    -   **Relations :** Lien vers `sessions` avec cascade delete
+    -   **Export :** Ajouté dans `src/server/db/schema/index.ts`
+
+-   **Types TypeScript :**
+    -   **`src/types/TSessionHistory.ts`** : Interfaces `SessionHistorySlot` et `NewSessionHistorySlot`
+
+-   **Endpoints tRPC :**
+    -   **`createHistorySlot`** : Capture tous les pain points actuels + notes + message utilisateur, calcule l'index automatiquement
+    -   **`getHistory`** : Récupère tous les slots d'une session ordonnés par index
+
+-   **Store Zustand :**
+    -   **`src/stores/session-store.ts`** : Ajout de `historySlots` dans le state
+    -   **Actions :** `setHistory` (chargement initial), `addHistorySlot` (ajout après création)
+
+-   **Intégration UI :**
+    -   **`session-view.tsx`** : Query de l'historique au mount, mutation `createHistorySlot` au submit du MessageInput
+    -   **Trigger :** Création d'un nouveau slot uniquement quand l'utilisateur envoie un message (pas à chaque modification)
+    -   **État `isGenerating`** : Connecté à la mutation pour feedback visuel
