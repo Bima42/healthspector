@@ -36,6 +36,13 @@
       "when": 1769940459197,
       "tag": "0004_awesome_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769943013608,
+      "tag": "0005_lumpy_daredevil",
+      "breakpoints": true
     }
   ]
 }

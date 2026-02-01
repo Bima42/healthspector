@@ -36,13 +36,26 @@ export function SessionView({
   sessionTitle,
   initialPainPoints,
 }: Props) {
-  const { setSession, setLoading, selectedPinId, selectPin, setHistory, addHistorySlot, predefinedPainPoints } = useSessionStore((state) => state);
+  const { 
+    setSession, 
+    setLoading, 
+    selectedPinId, 
+    selectPin, 
+    setHistory, 
+    addHistorySlot, 
+    predefinedPainPoints,
+    setSuggestions,
+    setSuggestionsLoading,
+  } = useSessionStore((state) => state);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
   const [notesDirty, setNotesDirty] = useState(false);
   const [targetMesh, setTargetMesh] = useState<string | null>(null);
+
+  // Utils for invalidating queries
+  const utils = api.useUtils();
 
   const { data: session, isLoading } = api.session.getById.useQuery(
     { id: sessionId },
@@ -58,8 +71,18 @@ export function SessionView({
   );
 
   const { data: history } = api.session.getHistory.useQuery({ sessionId });
+  
+  const { data: suggestions } = api.suggestions.getBySessionId.useQuery(
+    { sessionId },
+    {
+      refetchOnWindowFocus: false,
+    }
+  );
 
   const processMessageMutation = api.ai.processMessage.useMutation({
+    onMutate: () => {
+      setSuggestionsLoading(true);
+    },
     onSuccess: ({ session: updatedSession, historySlot }) => {
       if (updatedSession) {
         setSession(updatedSession);
@@ -68,12 +91,18 @@ export function SessionView({
       setNotes(historySlot.notes ?? "");
       setNotesDirty(false);
     },
+    onSettled: () => {
+      utils.suggestions.getBySessionId.invalidate({ sessionId });
+    },
   });
 
   const saveNotesMutation = api.session.createHistorySlot.useMutation({
     onSuccess: (slot) => {
       addHistorySlot(slot);
       setNotesDirty(false);
+    },
+    onSettled: () => {
+      utils.suggestions.getBySessionId.invalidate({ sessionId });
     },
   });
 
@@ -94,6 +123,12 @@ export function SessionView({
       setHistory(history);
     }
   }, [history, setHistory]);
+  
+  useEffect(() => {
+    if (suggestions) {
+      setSuggestions(suggestions);
+    }
+  }, [suggestions, setSuggestions]);
 
   useEffect(() => {
     if (history && history.length > 0) {
@@ -137,9 +172,11 @@ export function SessionView({
   const handleTranscribeAudio = async (blob: Blob): Promise<string> => {
     try {
       const base64Data = await blobToBase64(blob);
+      
       const result = await transcribeMutation.mutateAsync({
         audioData: base64Data,
       });
+      
       return result.text;
     } catch (error) {
       console.error("[SessionView] Transcription error:", error);
