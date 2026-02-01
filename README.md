@@ -1,5 +1,10 @@
 # Healthspector
+## Final grade
+The project got the #25th place out of 105 submissions.
+We are very proud concidering the size of our team and the failed start.
+![ranking](<Screenshot 2026-02-01 at 18.19.07.png>)
 
+---
 ![Cursor 2-Day AI Hackathon](https://ai-beavers.com/_next/image?url=%2Fimages%2Fhackathon-hero-20012026.png&w=1920&q=75)
 
 > AI-powered pain mapping tool that helps patients communicate symptoms to doctors through interactive 3D body visualization
@@ -24,9 +29,9 @@ An interactive 3D body model where users can:
 
 ## Resources
 
-#### [See the app in production!](https://hamburg-hackathon.tanguypauvret.me/)
+#### ~~[See the app in production!](https://hamburg-hackathon.tanguypauvret.me/)~~ _Not in production anymore_
 
-#### [See the live demo!](https://youtu.be/H1YTpQZZQ8E)
+#### [See the live demo!](https://youtu.be/F18L2jHr6T8)
 
 #### Quick overview
 ![Session Screenshot](docs/session_screenshot.png)
