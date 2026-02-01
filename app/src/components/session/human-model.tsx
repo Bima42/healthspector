@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function HumanModel({ onClick, targetMesh, onMeshPositionFound }: Props) {
-  const { scene } = useGLTF("/medias/3d/test_obvious_mesh.glb");
+  const { scene } = useGLTF("/medias/3d/final_3d_model.glb");
   
   const { setPredefinedPainPoints, predefinedPainPointsLoaded } = useSessionStore((state) => state);
   

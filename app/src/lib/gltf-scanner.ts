@@ -5,7 +5,7 @@ import type { PredefinedPainPoint } from "../types/TPainPoint";
  * Pattern to identify pain point targets
  * We exclude the main body mesh (Ch36) and only keep markers
  */
-const TARGET_PATTERNS = [/hand/i, /foot/i];
+const TARGET_PATTERNS = [/hand/i, /foot/i, /back/i, /head/i, /torso/i];
 
 /**
  * Scans a GLTF scene and logs all available meshes
