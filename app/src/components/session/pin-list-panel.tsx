@@ -40,10 +40,8 @@ export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Pro
             {painPoints.map((point) => (
               <Card
                 key={point.id}
-                className={`p-3 transition-colors duration-200 ${
-                  readOnly ? "" : "cursor-pointer hover:bg-accent/50"
-                }`}
-                onClick={readOnly ? undefined : () => onPinClick(point.id)}
+                className="p-3 transition-colors duration-200 cursor-pointer hover:bg-accent/50"
+                onClick={() => onPinClick(point.id)}
               >
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />

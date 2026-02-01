@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BodyViewer } from "./body-viewer";
 import { PinListPanel } from "./pin-list-panel";
+import { ViewPinDialog } from "./view-pin-dialog";
 import { Textarea } from "../ui/textarea";
 import { api } from "../../lib/trpc/client";
 import { useSessionStore } from "../../providers/store-provider";
@@ -56,6 +57,14 @@ export function SharedSessionView({
     }
   }, [history, setHistory]);
 
+  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handlePinClick = (pinId: string) => {
+    setSelectedPinId(pinId);
+    setDialogOpen(true);
+  };
+
   const latestNotes = history?.[history.length - 1]?.notes ?? "";
 
   return (
@@ -65,9 +74,8 @@ export function SharedSessionView({
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <PinListPanel 
-          onPinClick={() => {}} // No-op
-          onTestAddPin={() => {}} // No-op
+        <PinListPanel
+          onPinClick={handlePinClick}
           readOnly
         />
 
@@ -80,7 +88,7 @@ export function SharedSessionView({
 
           <BodyViewer
             sessionId={sessionId}
-            onPinClick={() => {}}
+            onPinClick={handlePinClick}
             targetMesh={null}
             setTargetMesh={() => {}}
             readOnly
@@ -96,6 +104,11 @@ export function SharedSessionView({
           />
         </div>
       </div>
+      <ViewPinDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        painPointId={selectedPinId}
+      />
     </div>
   );
 }
