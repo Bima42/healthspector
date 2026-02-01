@@ -51,3 +51,4 @@ yarn-error.log*
 
 ..idea/
 package-lock.json
+instructions/
