@@ -4,7 +4,7 @@
 
 > AI-powered pain mapping tool that helps patients communicate symptoms to doctors through interactive 3D body visualization
 
-**Context**: This project was born from a pivot. After spending 10 hours on a failed project ([read the post-mortem](./THE_FAIL.md)), we had 14 hours left to ship something. Healthspector is what happens when you learn fast and execute faster.
+**Context**: This project was born from a pivot. After spending 10 hours on a failed project ([read the post-mortem](./docs/THE_FAIL.md)), we had 14 hours left to ship something. Healthspector is what happens when you learn fast and execute faster.
 
 ---
 
@@ -21,6 +21,8 @@ An interactive 3D body model where users can:
 - **Improve** with AI agent suggestion, which leads you to describe your pain and feelings in detail
 - **Describe** pain type, intensity, and context
 - **Export** a structured pain report as a link, doctor can just consult it
+
+![Session Screenshot](docs/session_screenshot.png)
 
 ---
 
