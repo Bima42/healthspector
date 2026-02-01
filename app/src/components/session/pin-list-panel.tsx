@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
 import { MapPin } from "lucide-react";
 import { useSessionStore } from "../../providers/store-provider";
 
@@ -28,18 +27,6 @@ export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Pro
 
   return (
     <div className="w-80 border-r flex flex-col bg-background">
-      {onTestAddPin && !readOnly && (
-        <div className="p-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => onTestAddPin("hand-right")}
-          >
-            Add pin on right hand
-          </Button>
-        </div>
-      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2">

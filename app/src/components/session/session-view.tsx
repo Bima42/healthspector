@@ -6,10 +6,12 @@ import { PinListPanel } from "./pin-list-panel";
 import { EditPinDialog } from "./edit-pin-dialog";
 import { MessageInput } from "./message-input";
 import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 import { ShareButton } from "./share-button";
 import { api } from "../../lib/trpc/client";
 import { useSessionStore } from "../../providers/store-provider";
 import type { PainPoint } from "../../types/TPainPoint";
+import { Save } from "lucide-react";
 
 interface Props {
   sessionId: string;
@@ -39,6 +41,7 @@ export function SessionView({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
+  const [notesDirty, setNotesDirty] = useState(false);
   const [targetMesh, setTargetMesh] = useState<string | null>(null);
 
   const { data: session, isLoading } = api.session.getById.useQuery(
@@ -63,6 +66,14 @@ export function SessionView({
       }
       addHistorySlot(historySlot);
       setNotes(historySlot.notes ?? "");
+      setNotesDirty(false);
+    },
+  });
+
+  const saveNotesMutation = api.session.createHistorySlot.useMutation({
+    onSuccess: (slot) => {
+      addHistorySlot(slot);
+      setNotesDirty(false);
     },
   });
 
@@ -84,6 +95,15 @@ export function SessionView({
     }
   }, [history, setHistory]);
 
+  useEffect(() => {
+    if (history && history.length > 0) {
+      if (!notesDirty) {
+        const latestNotes = history[history.length - 1]?.notes ?? "";
+        setNotes(latestNotes);
+      }
+    }
+  }, [history]);
+
   const handlePinClick = (pinId: string) => {
     selectPin(pinId);
     setIsEditDialogOpen(true);
@@ -100,21 +120,29 @@ export function SessionView({
     setTargetMesh(meshName);
   };
 
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(e.target.value);
+    setNotesDirty(true);
+  };
+
+  const handleSaveNotes = () => {
+    if (!notes.trim()) return;
+    saveNotesMutation.mutate({
+      sessionId,
+      userMessage: "[ACTION] Updated notes",
+      notes,
+    });
+  };
+
   const handleTranscribeAudio = async (blob: Blob): Promise<string> => {
     try {
-      // Convert Blob to base64 data URL
       const base64Data = await blobToBase64(blob);
-      
-      // Call the transcription mutation
       const result = await transcribeMutation.mutateAsync({
         audioData: base64Data,
       });
-      
-      // Return the transcribed text
       return result.text;
     } catch (error) {
       console.error("[SessionView] Transcription error:", error);
-      // Return empty string on error to avoid breaking the UI
       return "";
     }
   };
@@ -174,10 +202,22 @@ export function SessionView({
         </div>
 
         <div className="w-80 border-l flex flex-col bg-background">
+          <div className="p-2 border-b flex items-center justify-between">
+            <span className="text-sm font-medium">Notes</span>
+            <Button
+              size="sm"
+              variant={notesDirty ? "default" : "ghost"}
+              onClick={handleSaveNotes}
+              disabled={!notesDirty || saveNotesMutation.isPending}
+            >
+              <Save className="h-4 w-4 mr-1" />
+              {saveNotesMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </div>
           <Textarea
             placeholder="Describe what's wrong..."
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={handleNotesChange}
             className="flex-1 resize-none border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 rounded-none"
           />
         </div>
