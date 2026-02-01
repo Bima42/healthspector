@@ -1,48 +1,52 @@
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:20-slim AS base
 
-# Install dependencies only when needed
+# ---- Builder Stage ----
+FROM base AS builder
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production
+COPY ./app/package*.json ./
+RUN npm ci
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
+COPY ./app ./
 
-WORKDIR /app
+ARG NEXT_PUBLIC_APP_URL
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy all source files
-COPY . .
-
-# Build the Next.js application
-# output: "standalone" in next.config.ts makes this optimized
-RUN npm run build
-
-# Stage 3: Runner
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-# Set production environment
+ENV SKIP_ENV_VALIDATION=1
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN adduser -D -s /bin/sh nextjs && \
-    chown -R nextjs:nextjs /app
+RUN npm run build
+
+# Compile migration script to standalone JS
+RUN npx esbuild src/server/db/migrate.ts \
+    --bundle \
+    --platform=node \
+    --outfile=migrate.cjs
+
+# ---- Runner Stage ----
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy migration files and compiled runner
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/migrate.cjs ./migrate.cjs
+
+COPY --chown=nextjs:nodejs ./docker/prod/entrypoint /entrypoint
+RUN chmod +x /entrypoint
 
 USER nextjs
 
-# Copy only the necessary files from builder
-# Standalone output includes everything needed to run
-COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nextjs /app/public ./public
-
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Use standalone server (optimized by Next.js)
-CMD ["node", "server.js"]
+ENTRYPOINT ["/entrypoint"]
