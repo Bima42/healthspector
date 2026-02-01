@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import { painTypeEnum } from "@/server/db/schema";
 import { SessionService } from "@/server/services/session-service";
 import { PainPointService } from "@/server/services/pain-point-service";
+import { ShareService } from "@/server/services/share-service";
 
 const painTypeSchema = z.enum(painTypeEnum.enumValues);
 
@@ -17,6 +18,18 @@ export const sessionRouter = createTRPCRouter({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
       return await SessionService.getById(input.id);
+    }),
+
+  createShare: publicProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      return await ShareService.createShare(input.sessionId);
+    }),
+
+  getByShareToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      return await ShareService.getSessionByToken(input.token);
     }),
 
   addPainPoint: publicProcedure

@@ -6,6 +6,7 @@ import { PinListPanel } from "./pin-list-panel";
 import { EditPinDialog } from "./edit-pin-dialog";
 import { MessageInput } from "@/components/session/message-input";
 import { Textarea } from "@/components/ui/textarea";
+import { ShareButton } from "@/components/session/share-button";
 import { transcribeAudio } from "@/lib/audio-utils";
 import { api } from "@/lib/trpc/client";
 import { useSessionStore } from "@/providers/store-provider";
@@ -102,13 +103,13 @@ export function SessionView({
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="border-b p-4 bg-background z-10">
+      <header className="border-b p-4 bg-background z-10 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{sessionTitle}</h1>
+        <ShareButton sessionId={sessionId} />
       </header>
 
       <div className="flex-1 flex overflow-hidden">
         <PinListPanel 
-          sessionId={sessionId} 
           onPinClick={handlePinClick}
           onTestAddPin={handleTestAddPin}
         />

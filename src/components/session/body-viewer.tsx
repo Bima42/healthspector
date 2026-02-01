@@ -14,13 +14,15 @@ interface Props {
   onPinClick: (pinId: string) => void;
   targetMesh: string | null;
   setTargetMesh: (mesh: string | null) => void;
+  readOnly?: boolean;
 }
 
 export function BodyViewer({ 
   sessionId, 
   onPinClick,
   targetMesh,
-  setTargetMesh
+  setTargetMesh,
+  readOnly = false,
 }: Props) {
 
   const { session } = useSessionStore((state) => state);
@@ -34,6 +36,7 @@ export function BodyViewer({
   } | null>(null);
 
   const handleModelClick = (position: [number, number, number]) => {
+    if (readOnly) return;
     setPendingPosition({ x: position[0], y: position[1], z: position[2] });
     setIsAddDialogOpen(true);
   };
