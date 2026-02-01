@@ -1,41 +1,37 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { HumanModel } from "./human-model";
 import { PainPin } from "./pain-pin";
 import { AddPinDialog } from "./add-pin-dialog";
-import { api } from "@/lib/trpc/client";
-import type { PainPoint } from "@/server/db/schema";
+import { useSessionStore } from "@/providers/store-provider";
+import { useState } from "react";
 
 interface Props {
   sessionId: string;
-  initialPainPoints: PainPoint[];
   onPinClick: (pinId: string) => void;
+  targetMesh: string | null;
+  setTargetMesh: (mesh: string | null) => void;
 }
 
-export function BodyViewer({ sessionId, initialPainPoints, onPinClick }: Props) {
+export function BodyViewer({ 
+  sessionId, 
+  onPinClick,
+  targetMesh,
+  setTargetMesh
+}: Props) {
+
+  const { session } = useSessionStore((state) => state);
+  const painPoints = session?.painPoints ?? [];
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [targetMesh, setTargetMesh] = useState<string | null>(null);
   const [pendingPosition, setPendingPosition] = useState<{
     x: number;
     y: number;
     z: number;
   } | null>(null);
-
-  const { data: session } = api.session.getById.useQuery(
-    { id: sessionId },
-    {
-      initialData: {
-        id: sessionId,
-        title: null,
-        painPoints: initialPainPoints,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    },
-  );
 
   const handleModelClick = (position: [number, number, number]) => {
     setPendingPosition({ x: position[0], y: position[1], z: position[2] });
@@ -44,7 +40,7 @@ export function BodyViewer({ sessionId, initialPainPoints, onPinClick }: Props) 
 
   return (
     <>
-      <div className="flex-1">
+      <div className="absolute inset-0">
         <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} intensity={0.8} />
@@ -60,20 +56,13 @@ export function BodyViewer({ sessionId, initialPainPoints, onPinClick }: Props) 
             />
           </Suspense>
 
-          {session?.painPoints?.map((point) => (
+          {painPoints.map((point) => (
             <PainPin key={point.id} point={point} onEdit={onPinClick} />
           ))}
 
           <OrbitControls enablePan={false} minDistance={1.5} maxDistance={5} />
         </Canvas>
       </div>
-
-      <button
-        className="absolute top-4 left-4 z-10 rounded bg-white px-3 py-1 text-sm shadow"
-        onClick={() => setTargetMesh("hand-right")}
-      >
-        Add pin on right hand
-      </button>
 
       <AddPinDialog
         open={isAddDialogOpen}
