@@ -54,3 +54,17 @@ export const PAIN_TYPES = [
     notes?: string;
     rating?: number;
   }
+
+export interface PredefinedPainPoint {
+    /** Original mesh name from GLTF (e.g., "hand-right") */
+    name: string;
+
+    /** 3D position of the target center in world coordinates */
+    position: [number, number, number];
+
+    /** Human-readable label (e.g., "Right Hand") */
+    label: string;
+
+    /** Category for grouping (e.g., "upper-extremity") */
+    category: string;
+}

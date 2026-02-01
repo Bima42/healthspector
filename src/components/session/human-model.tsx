@@ -3,7 +3,9 @@
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { ThreeEvent } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { scanPredefinedPainPoints } from "@/lib/gltf-scanner";
+import { useSessionStore } from "@/providers/store-provider";
 
 interface Props {
   onClick: (position: [number, number, number]) => void;
@@ -13,14 +15,15 @@ interface Props {
 
 export function HumanModel({ onClick, targetMesh, onMeshPositionFound }: Props) {
   const { scene } = useGLTF("/medias/3d/test_obvious_mesh.glb");
-
+  
+  const { setPredefinedPainPoints, predefinedPainPointsLoaded } = useSessionStore((state) => state);
+  
   useEffect(() => {
-    scene.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        console.log("Mesh found:", child.name);
-      }
-    });
-  }, [scene]);
+    if (!predefinedPainPointsLoaded) {
+      const points = scanPredefinedPainPoints(scene);
+      setPredefinedPainPoints(points);
+    }
+  }, [scene, predefinedPainPointsLoaded, setPredefinedPainPoints]);
 
   useEffect(() => {
     if (!targetMesh || !onMeshPositionFound) return;
