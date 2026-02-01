@@ -1,31 +1,22 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { sessions, painPoints, painTypeEnum, sessionHistory } from "@/server/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { painTypeEnum } from "@/server/db/schema";
+import { SessionService } from "@/server/services/session-service";
+import { PainPointService } from "@/server/services/pain-point-service";
 
 const painTypeSchema = z.enum(painTypeEnum.enumValues);
 
 export const sessionRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ title: z.string().optional() }))
-    .mutation(async ({ ctx, input }) => {
-      const [session] = await ctx.db
-        .insert(sessions)
-        .values({ title: input.title || "Nouvelle session" })
-        .returning();
-      return session;
+    .mutation(async ({ input }) => {
+      return await SessionService.create(input.title);
     }),
 
   getById: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      const session = await ctx.db.query.sessions.findFirst({
-        where: eq(sessions.id, input.id),
-        with: {
-          painPoints: true,
-        },
-      });
-      return session;
+    .query(async ({ input }) => {
+      return await SessionService.getById(input.id);
     }),
 
   addPainPoint: publicProcedure
@@ -41,23 +32,17 @@ export const sessionRouter = createTRPCRouter({
         type: painTypeSchema.default("other"),
         notes: z.string().optional(),
         rating: z.number().int().min(0).max(10).default(5),
-      }),
+      })
     )
-    .mutation(async ({ ctx, input }) => {
-      const [point] = await ctx.db
-        .insert(painPoints)
-        .values({
-          sessionId: input.sessionId,
-          posX: input.position.x,
-          posY: input.position.y,
-          posZ: input.position.z,
-          label: input.label,
-          type: input.type,
-          notes: input.notes,
-          rating: input.rating,
-        })
-        .returning();
-      return point;
+    .mutation(async ({ input }) => {
+      return await PainPointService.add({
+        sessionId: input.sessionId,
+        position: input.position,
+        label: input.label,
+        type: input.type,
+        notes: input.notes,
+        rating: input.rating,
+      });
     }),
 
   updatePainPoint: publicProcedure
@@ -68,23 +53,17 @@ export const sessionRouter = createTRPCRouter({
         type: painTypeSchema.optional(),
         notes: z.string().optional(),
         rating: z.number().int().min(0).max(10).optional(),
-      }),
+      })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const [updated] = await ctx.db
-        .update(painPoints)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(painPoints.id, id))
-        .returning();
-      return updated;
+      return await PainPointService.update(id, data);
     }),
 
   deletePainPoint: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      await ctx.db.delete(painPoints).where(eq(painPoints.id, input.id));
-      return { success: true };
+    .mutation(async ({ input }) => {
+      return await PainPointService.delete(input.id);
     }),
 
   createHistorySlot: publicProcedure
@@ -93,37 +72,19 @@ export const sessionRouter = createTRPCRouter({
         sessionId: z.string().uuid(),
         userMessage: z.string(),
         notes: z.string().optional(),
-      }),
+      })
     )
-    .mutation(async ({ ctx, input }) => {
-      const currentPainPoints = await ctx.db.query.painPoints.findMany({
-        where: eq(painPoints.sessionId, input.sessionId),
-      });
-
-      const existingSlots = await ctx.db.query.sessionHistory.findMany({
-        where: eq(sessionHistory.sessionId, input.sessionId),
-      });
-
-      const [slot] = await ctx.db
-        .insert(sessionHistory)
-        .values({
-          sessionId: input.sessionId,
-          painPoints: currentPainPoints,
-          notes: input.notes,
-          userMessage: input.userMessage,
-          index: existingSlots.length,
-        })
-        .returning();
-
-      return slot;
+    .mutation(async ({ input }) => {
+      return await SessionService.createHistorySlot(
+        input.sessionId,
+        input.userMessage,
+        input.notes
+      );
     }),
 
   getHistory: publicProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.query.sessionHistory.findMany({
-        where: eq(sessionHistory.sessionId, input.sessionId),
-        orderBy: asc(sessionHistory.index),
-      });
+    .query(async ({ input }) => {
+      return await SessionService.getHistory(input.sessionId);
     }),
 });
