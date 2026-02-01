@@ -34,12 +34,25 @@ export function SessionView({
   sessionTitle,
   initialPainPoints,
 }: Props) {
-  const { setSession, setLoading, selectedPinId, selectPin, setHistory, addHistorySlot, predefinedPainPoints } = useSessionStore((state) => state);
+  const { 
+    setSession, 
+    setLoading, 
+    selectedPinId, 
+    selectPin, 
+    setHistory, 
+    addHistorySlot, 
+    predefinedPainPoints,
+    setSuggestions,
+    setSuggestionsLoading,
+  } = useSessionStore((state) => state);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
   const [targetMesh, setTargetMesh] = useState<string | null>(null);
+
+  // Utils for invalidating queries
+  const utils = api.useUtils();
 
   const { data: session, isLoading } = api.session.getById.useQuery(
     { id: sessionId },
@@ -55,14 +68,27 @@ export function SessionView({
   );
 
   const { data: history } = api.session.getHistory.useQuery({ sessionId });
+  
+  const { data: suggestions } = api.suggestions.getBySessionId.useQuery(
+    { sessionId },
+    {
+      refetchOnWindowFocus: false,
+    }
+  );
 
   const processMessageMutation = api.ai.processMessage.useMutation({
+    onMutate: () => {
+      setSuggestionsLoading(true);
+    },
     onSuccess: ({ session: updatedSession, historySlot }) => {
       if (updatedSession) {
         setSession(updatedSession);
       }
       addHistorySlot(historySlot);
       setNotes(historySlot.notes ?? "");
+    },
+    onSettled: () => {
+      utils.suggestions.getBySessionId.invalidate({ sessionId });
     },
   });
 
@@ -83,6 +109,12 @@ export function SessionView({
       setHistory(history);
     }
   }, [history, setHistory]);
+  
+  useEffect(() => {
+    if (suggestions) {
+      setSuggestions(suggestions);
+    }
+  }, [suggestions, setSuggestions]);
 
   const handlePinClick = (pinId: string) => {
     selectPin(pinId);
@@ -102,19 +134,15 @@ export function SessionView({
 
   const handleTranscribeAudio = async (blob: Blob): Promise<string> => {
     try {
-      // Convert Blob to base64 data URL
       const base64Data = await blobToBase64(blob);
       
-      // Call the transcription mutation
       const result = await transcribeMutation.mutateAsync({
         audioData: base64Data,
       });
       
-      // Return the transcribed text
       return result.text;
     } catch (error) {
       console.error("[SessionView] Transcription error:", error);
-      // Return empty string on error to avoid breaking the UI
       return "";
     }
   };

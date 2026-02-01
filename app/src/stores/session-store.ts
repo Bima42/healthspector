@@ -1,8 +1,10 @@
 import { createStore } from 'zustand/vanilla';
 import type { SessionWithPainPoints } from '../types/TSession';
-import type { PainPoint, PainPointUpdate } from '../types/TPainPoint';
+import type { PainPoint } from '../types/TPainPoint';
+import type { PainPointUpdate } from "@/types/TSessionUpdate";
 import type { SessionHistorySlot } from '../types/TSessionHistory';
 import type { PredefinedPainPoint } from "../types/TPainPoint";
+import type { Suggestion } from "../types/TSuggestion";
 
 export interface SessionStoreState {
   session: SessionWithPainPoints | null;
@@ -13,6 +15,9 @@ export interface SessionStoreState {
   
   predefinedPainPoints: PredefinedPainPoint[];
   predefinedPainPointsLoaded: boolean;
+  
+  suggestions: Suggestion[];
+  suggestionsLoading: boolean;
   
   setSession: (session: SessionWithPainPoints) => void;
   setLoading: (isLoading: boolean) => void;
@@ -27,9 +32,12 @@ export interface SessionStoreState {
   setHistory: (slots: SessionHistorySlot[]) => void;
   addHistorySlot: (slot: SessionHistorySlot) => void;
   
-  // Predefined pain points management
   setPredefinedPainPoints: (points: PredefinedPainPoint[]) => void;
   getPredefinedPainPoint: (name: string) => PredefinedPainPoint | undefined;
+  
+  setSuggestions: (suggestions: Suggestion[]) => void;
+  setSuggestionsLoading: (loading: boolean) => void;
+  clearSuggestions: () => void;
   
   reset: () => void;
 }
@@ -41,6 +49,8 @@ export const sessionStore = createStore<SessionStoreState>()((set, get) => ({
   historySlots: [],
   predefinedPainPoints: [],
   predefinedPainPointsLoaded: false,
+  suggestions: [],
+  suggestionsLoading: false,
 
   setSession: (session: SessionWithPainPoints) => {
     set({ 
@@ -123,6 +133,18 @@ export const sessionStore = createStore<SessionStoreState>()((set, get) => ({
     return get().predefinedPainPoints.find(p => p.name === name);
   },
 
+  setSuggestions: (suggestions: Suggestion[]) => {
+    set({ suggestions, suggestionsLoading: false });
+  },
+
+  setSuggestionsLoading: (loading: boolean) => {
+    set({ suggestionsLoading: loading });
+  },
+
+  clearSuggestions: () => {
+    set({ suggestions: [] });
+  },
+
   reset: () => {
     set({
       session: null,
@@ -131,6 +153,8 @@ export const sessionStore = createStore<SessionStoreState>()((set, get) => ({
       historySlots: [],
       predefinedPainPoints: [],
       predefinedPainPointsLoaded: false,
+      suggestions: [],
+      suggestionsLoading: false,
     });
   },
 }));

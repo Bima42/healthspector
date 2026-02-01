@@ -2,16 +2,28 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { buildSessionPrompt } from "@/lib/llm/session-prompt-builder";
 import { SESSION_SYSTEM_MESSAGE } from "@/lib/llm/session-prompt";
+import { buildSuggestionsPrompt } from "@/lib/llm/suggestions-prompt-builder";
+import { SUGGESTIONS_SYSTEM_MESSAGE } from "@/lib/llm/suggestions-prompt";
 import { llmInvoke } from "@/lib/llm/llm";
 import { sessionUpdateSchema, type SessionUpdate } from "@/types/TSessionUpdate";
 import { SessionService } from "@/server/services/session-service";
 import { PainPointService } from "@/server/services/pain-point-service";
+import { SuggestionService } from "@/server/services/suggestion-service";
 
 const predefinedPainPointSchema = z.object({
   name: z.string(),
   position: z.tuple([z.number(), z.number(), z.number()]),
   label: z.string(),
   category: z.string(),
+});
+
+const suggestionItemSchema = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+});
+
+const suggestionsResponseSchema = z.object({
+  suggestions: z.array(suggestionItemSchema).max(4),
 });
 
 export const aiRouter = createTRPCRouter({
@@ -30,14 +42,12 @@ export const aiRouter = createTRPCRouter({
         throw new Error("Session not found");
       }
 
-      // Get current pain points to pass to prompt builder
-      const currentPainPoints = await PainPointService.getBySessionId(input.sessionId);
       const historySlots = await SessionService.getHistory(input.sessionId);
 
       const prompt = buildSessionPrompt(
         input.predefinedPoints,
         historySlots,
-        currentPainPoints, // Pass current points for source info
+        session.painPoints,
         input.userMessage
       );
 
@@ -51,17 +61,9 @@ export const aiRouter = createTRPCRouter({
 
       console.log("[AI] Response received:", JSON.stringify(llmResponse, null, 2));
 
-      // Handle pain point updates
       if (llmResponse.painPoints !== undefined) {
-        // Clear user points if explicitly requested
-        if (llmResponse.clearUserPoints) {
-          await PainPointService.deleteAll(input.sessionId);
-        } else {
-          // Default: only delete AI-placed points, preserve user points
-          await PainPointService.deleteAIPoints(input.sessionId);
-        }
+        await PainPointService.deleteAll(input.sessionId);
 
-        // Insert new AI-placed points
         if (llmResponse.painPoints.length > 0) {
           const resolvedPoints = PainPointService.resolveMeshNames(
             llmResponse.painPoints,
@@ -80,6 +82,32 @@ export const aiRouter = createTRPCRouter({
       );
 
       const updatedSession = await SessionService.getById(input.sessionId);
+
+      try {
+        console.log("[AI] Generating suggestions...");
+        
+        const suggestionsPrompt = buildSuggestionsPrompt(
+          updatedSession!.painPoints,
+          [...historySlots, historySlot]
+        );
+
+        const suggestionsResponse = await llmInvoke(
+          suggestionsPrompt,
+          suggestionsResponseSchema,
+          SUGGESTIONS_SYSTEM_MESSAGE,
+        );
+
+        await SuggestionService.replaceAll(
+          input.sessionId,
+          suggestionsResponse.suggestions
+        );
+
+        console.log(
+          `[AI] Generated ${suggestionsResponse.suggestions.length} suggestions`
+        );
+      } catch (error) {
+        console.error("[AI] Failed to generate suggestions:", error);
+      }
 
       return { session: updatedSession!, historySlot };
     }),

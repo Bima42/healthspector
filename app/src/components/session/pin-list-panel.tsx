@@ -6,6 +6,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { MapPin } from "lucide-react";
 import { useSessionStore } from "../../providers/store-provider";
+import { SuggestionsPanel } from "./suggestion-panel";
 
 interface Props {
   onPinClick: (pinId: string) => void;
@@ -41,7 +42,7 @@ export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Pro
         </div>
       )}
 
-      {/* Content */}
+      {/* Pain Points Section */}
       <div className="flex-1 overflow-y-auto p-2">
         {painPoints.length === 0 ? (
           <div className="px-4 py-8 text-sm text-muted-foreground text-center">
@@ -85,6 +86,8 @@ export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Pro
           </div>
         )}
       </div>
+
+      {!readOnly && <SuggestionsPanel />}
     </div>
   );
 }
