@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { sessions, painPoints, sessionHistory } from "@/server/db/schema";
 import { eq, asc } from "drizzle-orm";
-import { buildSessionPrompt } from "@/lib/llm/ai-prompt-builder";
+import { buildSessionPrompt, SESSION_SYSTEM_MESSAGE } from "@/lib/llm/session-prompt";
 import { llmInvoke } from "@/lib/llm/llm";
 import { aiSessionUpdateSchema, type AIPainPoint, type AISessionUpdate } from "@/types/TAISessionUpdate";
 import type { PredefinedPainPoint } from "@/types/TPainPoint";
@@ -65,7 +65,6 @@ export const aiRouter = createTRPCRouter({
       });
 
       const prompt = buildSessionPrompt(
-        session,
         input.predefinedPoints,
         historySlots,
         input.userMessage
@@ -73,7 +72,11 @@ export const aiRouter = createTRPCRouter({
 
       console.log("[AI] Input:\n", prompt);
 
-      const aiResponse = await llmInvoke<AISessionUpdate>(prompt, aiSessionUpdateSchema);
+      const aiResponse = await llmInvoke<AISessionUpdate>(
+        prompt,
+        aiSessionUpdateSchema,
+        SESSION_SYSTEM_MESSAGE
+      );
 
       console.log("[AI] Output:", JSON.stringify(aiResponse, null, 2));
 

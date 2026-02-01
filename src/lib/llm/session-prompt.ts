@@ -1,9 +1,10 @@
-import type { SessionWithPainPoints } from "@/types/TSession";
 import type { PredefinedPainPoint } from "@/types/TPainPoint";
 import type { SessionHistorySlot } from "@/types/TSessionHistory";
 
+export const SESSION_SYSTEM_MESSAGE = `You are a medical assistant helping to map pain points on a 3D body model. Analyze the user's message and session history to update the session state accordingly.`;
+
+
 export function buildSessionPrompt(
-  session: SessionWithPainPoints,
   predefinedPoints: PredefinedPainPoint[],
   historySlots: SessionHistorySlot[],
   userMessage: string
