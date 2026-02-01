@@ -1,17 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { HumanModel } from "./human-model";
 import { PainPin } from "./pain-pin";
 import { AddPinDialog } from "./add-pin-dialog";
-import { api } from "@/lib/trpc/client";
-import type { PainPoint } from "@/server/db/schema";
+import { useSessionStore } from "@/providers/store-provider";
+import { useState } from "react";
 
 interface Props {
   sessionId: string;
-  initialPainPoints: PainPoint[];
   onPinClick: (pinId: string) => void;
   targetMesh: string | null;
   setTargetMesh: (mesh: string | null) => void;
@@ -19,30 +18,20 @@ interface Props {
 
 export function BodyViewer({ 
   sessionId, 
-  initialPainPoints, 
   onPinClick,
   targetMesh,
   setTargetMesh
 }: Props) {
+
+  const { session } = useSessionStore((state) => state);
+  const painPoints = session?.painPoints ?? [];
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [pendingPosition, setPendingPosition] = useState<{
     x: number;
     y: number;
     z: number;
   } | null>(null);
-
-  const { data: session } = api.session.getById.useQuery(
-    { id: sessionId },
-    {
-      initialData: {
-        id: sessionId,
-        title: null,
-        painPoints: initialPainPoints,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    },
-  );
 
   const handleModelClick = (position: [number, number, number]) => {
     setPendingPosition({ x: position[0], y: position[1], z: position[2] });
@@ -67,7 +56,7 @@ export function BodyViewer({
             />
           </Suspense>
 
-          {session?.painPoints?.map((point) => (
+          {painPoints.map((point) => (
             <PainPin key={point.id} point={point} onEdit={onPinClick} />
           ))}
 

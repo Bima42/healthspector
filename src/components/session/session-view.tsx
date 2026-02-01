@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BodyViewer } from "./body-viewer";
 import { PinListPanel } from "./pin-list-panel";
 import { EditPinDialog } from "./edit-pin-dialog";
 import { MessageInput } from "@/components/session/message-input";
 import { Textarea } from "@/components/ui/textarea";
 import { transcribeAudio } from "@/lib/audio-utils";
-import type { PainPoint } from "@/server/db/schema";
+import { api } from "@/lib/trpc/client";
+import { useSessionStore } from "@/providers/store-provider";
+import type { PainPoint } from "@/types/TPainPoint";
 
 interface Props {
   sessionId: string;
@@ -20,15 +22,46 @@ export function SessionView({
   sessionTitle,
   initialPainPoints,
 }: Props) {
+  const { setSession, setLoading, selectedPinId, selectPin } = useSessionStore((state) => state);
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingPinId, setEditingPinId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState("");
   const [targetMesh, setTargetMesh] = useState<string | null>(null);
 
+  const { data: session, isLoading } = api.session.getById.useQuery(
+    { id: sessionId },
+    {
+      initialData: {
+        id: sessionId,
+        title: sessionTitle,
+        painPoints: initialPainPoints,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (session) {
+      setSession(session);
+    }
+  }, [session, setSession]);
+
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading, setLoading]);
+
   const handlePinClick = (pinId: string) => {
-    setEditingPinId(pinId);
+    selectPin(pinId);
     setIsEditDialogOpen(true);
+  };
+
+  const handleEditDialogClose = (open: boolean) => {
+    setIsEditDialogOpen(open);
+    if (!open) {
+      selectPin(null);
+    }
   };
 
   const handleTestAddPin = (meshName: string) => {
@@ -42,18 +75,14 @@ export function SessionView({
         <h1 className="text-xl font-semibold">{sessionTitle}</h1>
       </header>
 
-      {/* Main content - 3 columns layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left panel - Pain points list */}
         <PinListPanel 
           sessionId={sessionId} 
           onPinClick={handlePinClick}
           onTestAddPin={handleTestAddPin}
         />
 
-        {/* Center - 3D Viewer with MessageInput */}
         <div className="flex-1 relative">
-          {/* Instruction text */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 text-center">
             <p className="text-sm text-muted-foreground/60 max-w-md px-4">
               Click on the body to mark where you feel pain. You can rotate the model by dragging.
@@ -62,13 +91,11 @@ export function SessionView({
 
           <BodyViewer
             sessionId={sessionId}
-            initialPainPoints={initialPainPoints}
             onPinClick={handlePinClick}
             targetMesh={targetMesh}
             setTargetMesh={setTargetMesh}
           />
 
-          {/* MessageInput at bottom center */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-20">
             <form
               onSubmit={(e) => {
@@ -88,7 +115,6 @@ export function SessionView({
           </div>
         </div>
 
-        {/* Right panel - Notes */}
         <div className="w-80 border-l flex flex-col bg-background">
           <Textarea
             placeholder="Describe what's wrong..."
@@ -99,12 +125,11 @@ export function SessionView({
         </div>
       </div>
 
-      {/* Edit dialog */}
       <EditPinDialog
         open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
+        onOpenChange={handleEditDialogClose}
         sessionId={sessionId}
-        painPointId={editingPinId}
+        painPointId={selectedPinId}
       />
     </div>
   );

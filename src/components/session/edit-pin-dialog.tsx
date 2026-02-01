@@ -33,8 +33,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/trpc/client";
-import { useSessionStore } from "@/lib/stores/session-store";
-import type { PainType } from "@/server/db/schema";
+import { useSessionStore } from "@/providers/store-provider";
+import { PAIN_TYPES, type PainType } from "@/types/TPainPoint";
 
 interface EditPinDialogProps {
   open: boolean;
@@ -42,17 +42,6 @@ interface EditPinDialogProps {
   sessionId: string;
   painPointId: string | null;
 }
-
-const painTypeKeys: PainType[] = [
-  "sharp",
-  "dull",
-  "burning",
-  "tingling",
-  "throbbing",
-  "cramping",
-  "shooting",
-  "other",
-];
 
 export function EditPinDialog({
   open,
@@ -63,6 +52,8 @@ export function EditPinDialog({
   const t = useTranslations("painDialog");
   const tTypes = useTranslations("painTypes");
 
+  const { session, updatePainPoint, removePainPoint, clearSelection } = useSessionStore((state) => state);
+
   const [type, setType] = useState<PainType>("other");
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
@@ -70,13 +61,8 @@ export function EditPinDialog({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const utils = api.useUtils();
-  const clearSelection = useSessionStore((s) => s.clearSelection);
 
-  const { data: session } = api.session.getById.useQuery(
-    { id: sessionId },
-    { enabled: open && !!painPointId }
-  );
-
+  // Find the point from store
   const point = session?.painPoints?.find((p) => p.id === painPointId);
 
   useEffect(() => {
@@ -89,16 +75,31 @@ export function EditPinDialog({
   }, [point]);
 
   const updateMutation = api.session.updatePainPoint.useMutation({
-    onSuccess: () => {
+    onSuccess: (updatedPoint) => {
+      // Update store immediately
+      updatePainPoint(painPointId!, {
+        label: updatedPoint.label,
+        type: updatedPoint.type,
+        notes: updatedPoint.notes ?? undefined,
+        rating: updatedPoint.rating,
+      });
+      
+      // Invalidate query to keep cache in sync
       utils.session.getById.invalidate({ id: sessionId });
+      
       onOpenChange(false);
     },
   });
 
   const deleteMutation = api.session.deletePainPoint.useMutation({
     onSuccess: () => {
-      utils.session.getById.invalidate({ id: sessionId });
+      // Update store immediately
+      removePainPoint(painPointId!);
       clearSelection();
+      
+      // Invalidate query to keep cache in sync
+      utils.session.getById.invalidate({ id: sessionId });
+      
       onOpenChange(false);
     },
   });
@@ -148,7 +149,7 @@ export function EditPinDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {painTypeKeys.map((key) => (
+                    {PAIN_TYPES.map((key) => (
                       <SelectItem key={key} value={key}>
                         {tTypes(key)}
                       </SelectItem>

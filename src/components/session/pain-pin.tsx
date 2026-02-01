@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PainPoint } from "@/server/db/schema";
+import type { PainPoint } from "@/types/TPainPoint";
 
 interface Props {
   point: PainPoint;

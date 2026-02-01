@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/trpc/client";
-import type { PainType } from "@/server/db/schema";
+import { useSessionStore } from "@/providers/store-provider";
+import { PAIN_TYPES, type PainType } from "@/types/TPainPoint";
 
 interface AddPinDialogProps {
   open: boolean;
@@ -31,17 +32,6 @@ interface AddPinDialogProps {
   sessionId: string;
   position: { x: number; y: number; z: number } | null;
 }
-
-const painTypeKeys: PainType[] = [
-  "sharp",
-  "dull",
-  "burning",
-  "tingling",
-  "throbbing",
-  "cramping",
-  "shooting",
-  "other",
-];
 
 export function AddPinDialog({
   open,
@@ -52,6 +42,8 @@ export function AddPinDialog({
   const t = useTranslations("painDialog");
   const tTypes = useTranslations("painTypes");
 
+  const { addPainPoint} = useSessionStore((state) => state);
+
   const [label, setLabel] = useState("");
   const [type, setType] = useState<PainType>("other");
   const [notes, setNotes] = useState("");
@@ -60,8 +52,12 @@ export function AddPinDialog({
   const utils = api.useUtils();
 
   const addPainMutation = api.session.addPainPoint.useMutation({
-    onSuccess: () => {
+    onSuccess: (newPoint) => {
+      addPainPoint(newPoint);
+      
+      // Invalidate query to keep cache in sync
       utils.session.getById.invalidate({ id: sessionId });
+      
       handleClose();
     },
   });
@@ -111,7 +107,7 @@ export function AddPinDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {painTypeKeys.map((key) => (
+                  {PAIN_TYPES.map((key) => (
                     <SelectItem key={key} value={key}>
                       {tTypes(key)}
                     </SelectItem>

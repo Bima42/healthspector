@@ -65,3 +65,29 @@
     -   **Texte d'instruction discret** ajouté en haut du body viewer dans `session-view.tsx`
     -   Positionnement centré avec `text-muted-foreground/60` pour faible visibilité
     -   Message : "Click on the body to mark where you feel pain. You can rotate the model by dragging."
+
+### ✅ **Phase 4 : Centralisation de l'état de session avec Zustand Store**
+
+-   **Types centralisés :**
+    -   **`src/types/TPainPoint.ts`** : `PainPoint`, `NewPainPoint`, `PainPointUpdate`, `PAIN_TYPES` constant
+    -   **`src/types/TSession.ts`** : `Session`, `SessionWithPainPoints`
+
+-   **Store Zustand :**
+    -   **`src/stores/session-store.ts`** : Store vanilla avec état (`session`, `isLoading`, `selectedPinId`) et actions (`setSession`, `addPainPoint`, `updatePainPoint`, `removePainPoint`, `selectPin`, `clearSelection`, `reset`)
+
+-   **Provider React :**
+    -   **`src/providers/store-provider.tsx`** : Context wrapper avec hook `useSessionStore((state) => state)` pour accès au store
+    -   **`src/app/layout.tsx`** : Intégration du `StoreProvider` entre TRPCProvider et NextIntlClientProvider
+
+-   **Adaptation des composants :**
+    -   **`session-view.tsx`** : Synchronisation tRPC → Store via `useEffect`, gestion de la sélection de pins
+    -   **`body-viewer.tsx`** : Lecture des `painPoints` depuis le store (suppression query locale)
+    -   **`pin-list-panel.tsx`** : Lecture de `session` depuis le store (suppression query locale)
+    -   **`add-pin-dialog.tsx`** : Utilisation de `addPainPoint()` après mutation tRPC
+    -   **`edit-pin-dialog.tsx`** : Utilisation de `updatePainPoint()` et `removePainPoint()` après mutations tRPC
+    -   **`pain-pin.tsx`** : Migration de l'import vers `@/types/TPainPoint`
+
+-   **Pattern :**
+    -   Mutations optimistes : Update store immédiatement → Invalidate cache tRPC
+    -   Usage du store : `const { prop1, prop2 } = useSessionStore((state) => state)`
+    -   Suppression de l'ancien store (`src/lib/stores/session-store.ts`)

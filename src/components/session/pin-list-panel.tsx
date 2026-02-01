@@ -1,11 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { api } from "@/lib/trpc/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
+import { useSessionStore } from "@/providers/store-provider";
 
 interface Props {
   sessionId: string;
@@ -17,8 +17,7 @@ export function PinListPanel({ sessionId, onPinClick, onTestAddPin }: Props) {
   const t = useTranslations("session");
   const tTypes = useTranslations("painTypes");
 
-  const { data: session } = api.session.getById.useQuery({ id: sessionId });
-
+  const { session } = useSessionStore((state) => state);
   const painPoints = session?.painPoints ?? [];
 
   const getRatingBadgeColor = (rating: number) => {
