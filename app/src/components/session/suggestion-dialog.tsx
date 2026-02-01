@@ -30,10 +30,6 @@ export function SuggestionDialog({
             {description}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
-          💡 You can answer this question using the message input below the 3D model.
-        </div>
       </DialogContent>
     </Dialog>
   );

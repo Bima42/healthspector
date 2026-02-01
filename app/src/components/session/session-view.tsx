@@ -11,7 +11,8 @@ import { ShareButton } from "./share-button";
 import { api } from "../../lib/trpc/client";
 import { useSessionStore } from "../../providers/store-provider";
 import type { PainPoint } from "../../types/TPainPoint";
-import { Save } from "lucide-react";
+import { Save, Home, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface Props {
   sessionId: string;
@@ -54,7 +55,6 @@ export function SessionView({
   const [notesDirty, setNotesDirty] = useState(false);
   const [targetMesh, setTargetMesh] = useState<string | null>(null);
 
-  // Utils for invalidating queries
   const utils = api.useUtils();
 
   const { data: session, isLoading } = api.session.getById.useQuery(
@@ -74,26 +74,18 @@ export function SessionView({
   
   const { data: suggestions } = api.suggestions.getBySessionId.useQuery(
     { sessionId },
-    {
-      refetchOnWindowFocus: false,
-    }
+    { refetchOnWindowFocus: false }
   );
 
   const processMessageMutation = api.ai.processMessage.useMutation({
-    onMutate: () => {
-      setSuggestionsLoading(true);
-    },
+    onMutate: () => setSuggestionsLoading(true),
     onSuccess: ({ session: updatedSession, historySlot }) => {
-      if (updatedSession) {
-        setSession(updatedSession);
-      }
+      if (updatedSession) setSession(updatedSession);
       addHistorySlot(historySlot);
       setNotes(historySlot.notes ?? "");
       setNotesDirty(false);
     },
-    onSettled: () => {
-      utils.suggestions.getBySessionId.invalidate({ sessionId });
-    },
+    onSettled: () => utils.suggestions.getBySessionId.invalidate({ sessionId }),
   });
 
   const saveNotesMutation = api.session.createHistorySlot.useMutation({
@@ -101,17 +93,13 @@ export function SessionView({
       addHistorySlot(slot);
       setNotesDirty(false);
     },
-    onSettled: () => {
-      utils.suggestions.getBySessionId.invalidate({ sessionId });
-    },
+    onSettled: () => utils.suggestions.getBySessionId.invalidate({ sessionId }),
   });
 
   const transcribeMutation = api.speech.transcribe.useMutation();
 
   useEffect(() => {
-    if (session) {
-      setSession(session);
-    }
+    if (session) setSession(session);
   }, [session, setSession]);
 
   useEffect(() => {
@@ -119,25 +107,19 @@ export function SessionView({
   }, [isLoading, setLoading]);
 
   useEffect(() => {
-    if (history) {
-      setHistory(history);
-    }
+    if (history) setHistory(history);
   }, [history, setHistory]);
   
   useEffect(() => {
-    if (suggestions) {
-      setSuggestions(suggestions);
-    }
+    if (suggestions) setSuggestions(suggestions);
   }, [suggestions, setSuggestions]);
 
   useEffect(() => {
-    if (history && history.length > 0) {
-      if (!notesDirty) {
-        const latestNotes = history[history.length - 1]?.notes ?? "";
-        setNotes(latestNotes);
-      }
+    if (history && history.length > 0 && !notesDirty) {
+      const latestNotes = history[history.length - 1]?.notes ?? "";
+      setNotes(latestNotes);
     }
-  }, [history]);
+  }, [history, notesDirty]);
 
   const handlePinClick = (pinId: string) => {
     selectPin(pinId);
@@ -146,13 +128,7 @@ export function SessionView({
 
   const handleEditDialogClose = (open: boolean) => {
     setIsEditDialogOpen(open);
-    if (!open) {
-      selectPin(null);
-    }
-  };
-
-  const handleTestAddPin = (meshName: string) => {
-    setTargetMesh(meshName);
+    if (!open) selectPin(null);
   };
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -172,11 +148,7 @@ export function SessionView({
   const handleTranscribeAudio = async (blob: Blob): Promise<string> => {
     try {
       const base64Data = await blobToBase64(blob);
-      
-      const result = await transcribeMutation.mutateAsync({
-        audioData: base64Data,
-      });
-      
+      const result = await transcribeMutation.mutateAsync({ audioData: base64Data });
       return result.text;
     } catch (error) {
       console.error("[SessionView] Transcription error:", error);
@@ -186,35 +158,44 @@ export function SessionView({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!input.trim()) return;
-
     processMessageMutation.mutate({
       sessionId,
       userMessage: input,
       predefinedPoints: predefinedPainPoints,
     });
-
     setInput("");
   };
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="border-b p-4 bg-background z-10 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{sessionTitle}</h1>
+      {/* Header with blur */}
+      <header className="px-4 py-3 bg-background/80 backdrop-blur-md z-10 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Home className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/session/new">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+        
+        <h1 className="text-sm font-medium text-muted-foreground">{sessionTitle}</h1>
+        
         <ShareButton sessionId={sessionId} />
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <PinListPanel 
-          onPinClick={handlePinClick}
-          onTestAddPin={handleTestAddPin}
-        />
+        <PinListPanel onPinClick={handlePinClick} />
 
         <div className="flex-1 relative">
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 text-center">
             <p className="text-sm text-muted-foreground/60 max-w-md px-4">
-              Click on the body to mark where you feel pain. You can rotate the model by dragging.
+              Click on the body to mark pain. Drag to rotate.
             </p>
           </div>
 
@@ -238,17 +219,19 @@ export function SessionView({
           </div>
         </div>
 
-        <div className="w-80 border-l flex flex-col bg-background">
-          <div className="p-2 border-b flex items-center justify-between">
-            <span className="text-sm font-medium">Notes</span>
+        {/* Notes panel */}
+        <div className="w-80 flex flex-col bg-background shadow-md">
+          <div className="p-3 flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Notes</span>
             <Button
               size="sm"
               variant={notesDirty ? "default" : "ghost"}
               onClick={handleSaveNotes}
               disabled={!notesDirty || saveNotesMutation.isPending}
+              className="h-7 px-2"
             >
-              <Save className="h-4 w-4 mr-1" />
-              {saveNotesMutation.isPending ? "Saving..." : "Save"}
+              <Save className="h-3.5 w-3.5 mr-1" />
+              {saveNotesMutation.isPending ? "..." : "Save"}
             </Button>
           </div>
           <Textarea

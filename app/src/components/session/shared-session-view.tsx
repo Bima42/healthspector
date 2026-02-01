@@ -5,9 +5,12 @@ import { BodyViewer } from "./body-viewer";
 import { PinListPanel } from "./pin-list-panel";
 import { ViewPinDialog } from "./view-pin-dialog";
 import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 import { api } from "../../lib/trpc/client";
 import { useSessionStore } from "../../providers/store-provider";
 import type { PainPoint } from "../../types/TPainPoint";
+import { Home } from "lucide-react";
+import Link from "next/link";
 
 interface Props {
   token: string;
@@ -26,7 +29,7 @@ export function SharedSessionView({
     { token },
     {
       initialData: {
-        id: "", // Not needed for shared view
+        id: "",
         title: sessionTitle,
         painPoints: initialPainPoints,
         createdAt: new Date(),
@@ -42,9 +45,7 @@ export function SharedSessionView({
   );
 
   useEffect(() => {
-    if (session) {
-      setSession(session);
-    }
+    if (session) setSession(session);
   }, [session, setSession]);
 
   useEffect(() => {
@@ -52,9 +53,7 @@ export function SharedSessionView({
   }, [isLoading, setLoading]);
 
   useEffect(() => {
-    if (history) {
-      setHistory(history);
-    }
+    if (history) setHistory(history);
   }, [history, setHistory]);
 
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
@@ -69,8 +68,18 @@ export function SharedSessionView({
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="border-b p-4 bg-background z-10">
-        <h1 className="text-xl font-semibold">{sessionTitle} (Read-only)</h1>
+      <header className="px-4 py-3 bg-background/80 backdrop-blur-md z-10 flex items-center justify-between shadow-sm">
+        <Link href="/">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Home className="h-4 w-4" />
+          </Button>
+        </Link>
+        
+        <h1 className="text-sm font-medium text-muted-foreground">
+          {sessionTitle} <span className="text-xs">(Read-only)</span>
+        </h1>
+        
+        <div className="w-8" /> {/* Spacer for centering */}
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -82,7 +91,7 @@ export function SharedSessionView({
         <div className="flex-1 relative">
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 text-center">
             <p className="text-sm text-muted-foreground/60 max-w-md px-4">
-              You are viewing a shared pain report. Drag to rotate the model.
+              Viewing shared report. Drag to rotate.
             </p>
           </div>
 
@@ -95,7 +104,10 @@ export function SharedSessionView({
           />
         </div>
 
-        <div className="w-80 border-l flex flex-col bg-background">
+        <div className="w-80 flex flex-col bg-background shadow-md">
+          <div className="p-3">
+            <span className="text-sm font-medium text-muted-foreground">Notes</span>
+          </div>
           <Textarea
             readOnly
             value={latestNotes}

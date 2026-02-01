@@ -1,11 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { MapPin } from "lucide-react";
 import { useSessionStore } from "../../providers/store-provider";
 import { SuggestionsPanel } from "./suggestion-panel";
+import { cn } from "../../lib/utils";
 
 interface Props {
   onPinClick: (pinId: string) => void;
@@ -13,24 +12,22 @@ interface Props {
   readOnly?: boolean;
 }
 
-export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Props) {
+export function PinListPanel({ onPinClick, readOnly = false }: Props) {
   const t = useTranslations("session");
   const tTypes = useTranslations("painTypes");
 
   const { session } = useSessionStore((state) => state);
   const painPoints = session?.painPoints ?? [];
 
-  const getRatingBadgeColor = (rating: number) => {
-    if (rating <= 3) return "bg-green-500 hover:bg-green-600 text-white";
-    if (rating <= 6) return "bg-yellow-500 hover:bg-yellow-600 text-white";
-    return "bg-red-500 hover:bg-red-600 text-white";
+  const getRatingColor = (rating: number) => {
+    if (rating <= 3) return "bg-green-500/10 text-green-700 dark:text-green-400";
+    if (rating <= 6) return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400";
+    return "bg-red-500/10 text-red-700 dark:text-red-400";
   };
 
   return (
-    <div className="w-80 border-r flex flex-col bg-background">
-
-      {/* Pain Points Section */}
-      <div className="flex-1 overflow-y-auto p-2">
+    <div className="w-80 flex flex-col bg-background shadow-md">
+      <div className="flex-1 overflow-y-auto p-3">
         {painPoints.length === 0 ? (
           <div className="px-4 py-8 text-sm text-muted-foreground text-center">
             {readOnly ? "No pain points recorded" : t("clickToAdd")}
@@ -38,35 +35,24 @@ export function PinListPanel({ onPinClick, onTestAddPin, readOnly = false }: Pro
         ) : (
           <div className="space-y-2">
             {painPoints.map((point) => (
-              <Card
+              <div
                 key={point.id}
-                className="p-3 transition-colors duration-200 cursor-pointer hover:bg-accent/50"
-                onClick={() => onPinClick(point.id)}
+                className={cn(
+                  "p-3 transition-colors duration-200 cursor-pointer hover:bg-accent/50",
+                  !readOnly && "cursor-pointer hover:shadow-md hover:bg-accent/5"
+                )}
+                onClick={readOnly ? undefined : () => onPinClick(point.id)}
               >
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-sm truncate">
-                        {point.label}
-                      </h3>
-                      <h4 className="font-medium text-sm truncate">
-                        {tTypes(point.type)}
-                      </h4>
-                      <Badge
-                        className={`${getRatingBadgeColor(point.rating)} text-xs px-2 py-0 flex-shrink-0`}
-                      >
-                        {point.rating}
-                      </Badge>
-                    </div>
-                    {point.notes && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {point.notes}
-                      </p>
-                    )}
-                  </div>
+                <h3 className="font-medium text-sm mb-2">{point.label}</h3>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {tTypes(point.type)}
+                  </Badge>
+                  <Badge className={cn("text-xs font-medium", getRatingColor(point.rating))}>
+                    {point.rating}/10
+                  </Badge>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}
