@@ -4,6 +4,8 @@ import { useState } from "react";
 import { BodyViewer } from "./body-viewer";
 import { PinListSidebar } from "./pin-list-sidebar";
 import { EditPinDialog } from "./edit-pin-dialog";
+import { MessageInput } from "@/components/ui/message-input";
+import { transcribeAudio } from "@/lib/audio-utils";
 import type { PainPoint } from "@/server/db/schema";
 
 interface Props {
@@ -19,6 +21,10 @@ export function SessionView({
 }: Props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingPinId, setEditingPinId] = useState<string | null>(null);
+  
+  // State for MessageInput
+  const [input, setInput] = useState("");
+  const [files, setFiles] = useState<File[] | null>(null);
 
   const handlePinClick = (pinId: string) => {
     setEditingPinId(pinId);
@@ -28,15 +34,41 @@ export function SessionView({
   return (
     <>
       <PinListSidebar sessionId={sessionId} onPinClick={handlePinClick}>
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col relative">
           <header className="border-b p-4 bg-background z-10">
             <h1 className="text-xl font-semibold">{sessionTitle}</h1>
           </header>
+          
           <BodyViewer
             sessionId={sessionId}
             initialPainPoints={initialPainPoints}
             onPinClick={handlePinClick}
           />
+
+          {/* MessageInput centered at bottom */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-20">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                // TODO: Handle message submission later
+                console.log("Message submitted:", input, files);
+                setInput("");
+                setFiles(null);
+              }}
+            >
+              <MessageInput
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                isGenerating={false}
+                allowAttachments
+                files={files}
+                setFiles={setFiles}
+                transcribeAudio={transcribeAudio}
+                placeholder="Ask AI..."
+                submitOnEnter={true}
+              />
+            </form>
+          </div>
         </div>
       </PinListSidebar>
 
