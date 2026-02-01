@@ -22,6 +22,13 @@ An interactive 3D body model where users can:
 - **Describe** pain type, intensity, and context
 - **Export** a structured pain report as a link, doctor can just consult it
 
+## Resources
+
+#### [See the app in production!](https://hamburg-hackathon.tanguypauvret.me/)
+
+#### [See the live demo!](https://youtu.be/H1YTpQZZQ8E)
+
+#### Quick overview
 ![Session Screenshot](docs/session_screenshot.png)
 
 ---
