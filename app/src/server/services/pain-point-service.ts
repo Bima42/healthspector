@@ -130,7 +130,7 @@ export const PainPointService = {
         posX: predefined.position[0],
         posY: predefined.position[1],
         posZ: predefined.position[2],
-        meshName: point.meshName, // Store mesh reference
+        meshName: point.meshName || "",
         label: point.label,
         type: point.type,
         notes: point.notes ?? null,
