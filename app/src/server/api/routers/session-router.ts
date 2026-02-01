@@ -48,7 +48,7 @@ export const sessionRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return await PainPointService.add({
+      const point = await PainPointService.add({
         sessionId: input.sessionId,
         position: input.position,
         label: input.label,
@@ -56,12 +56,21 @@ export const sessionRouter = createTRPCRouter({
         notes: input.notes,
         rating: input.rating,
       });
+
+      // Snapshot after user action
+      await SessionService.createHistorySlot(
+        input.sessionId,
+        `[ACTION] Added pain point: ${input.label || "Unnamed"} (${input.type}, intensity: ${input.rating}/10)`
+      );
+
+      return point;
     }),
 
   updatePainPoint: publicProcedure
     .input(
       z.object({
         id: z.string().uuid(),
+        sessionId: z.string().uuid(), // Added: need this for history
         label: z.string().optional(),
         type: painTypeSchema.optional(),
         notes: z.string().optional(),
@@ -69,14 +78,37 @@ export const sessionRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      return await PainPointService.update(id, data);
+      const { id, sessionId, ...data } = input;
+      const updated = await PainPointService.update(id, data);
+
+      // Snapshot after user action
+      await SessionService.createHistorySlot(
+        sessionId,
+        `[ACTION] Updated pain point: ${updated.label || "Unnamed"} (${updated.type}, intensity: ${updated.rating}/10)`
+      );
+
+      return updated;
     }),
 
   deletePainPoint: publicProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ 
+      id: z.string().uuid(),
+      sessionId: z.string().uuid(), // Added: need this for history
+    }))
     .mutation(async ({ input }) => {
-      return await PainPointService.delete(input.id);
+      // Fetch before delete to get details for history
+      const points = await PainPointService.getBySessionId(input.sessionId);
+      const pointToDelete = points.find(p => p.id === input.id);
+      
+      await PainPointService.delete(input.id);
+
+      // Snapshot after user action
+      await SessionService.createHistorySlot(
+        input.sessionId,
+        `[ACTION] Deleted pain point: ${pointToDelete?.label || "Unnamed"}`
+      );
+
+      return { success: true };
     }),
 
   createHistorySlot: publicProcedure

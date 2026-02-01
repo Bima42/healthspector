@@ -110,6 +110,7 @@ export function EditPinDialog({
 
     updateMutation.mutate({
       id: painPointId,
+      sessionId,  // Add this
       label: label || "",
       type,
       notes,
@@ -119,7 +120,10 @@ export function EditPinDialog({
 
   const handleDelete = () => {
     if (!painPointId) return;
-    deleteMutation.mutate({ id: painPointId });
+    deleteMutation.mutate({ 
+      id: painPointId,
+      sessionId,
+    });
     setShowDeleteAlert(false);
   };
 
